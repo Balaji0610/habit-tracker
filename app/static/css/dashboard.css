@@ -1,0 +1,127 @@
+/* GLOBAL */
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f6f8;
+  margin: 0;
+}
+
+.dashboard {
+  padding: 10px 14px;
+}
+
+/* ===================== */
+/* TOP CARDS (COMPACT) */
+/* ===================== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.card {
+  background: white;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+.card h4 {
+  margin: 0;
+  font-size: 12px;
+  color: gray;
+}
+
+.card p {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 4px 0 0;
+}
+
+/* ===================== */
+/* TABLE (DENSE GRID) */
+/* ===================== */
+.table-wrapper {
+  overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+  padding: 5px;
+}
+
+table {
+  border-collapse: collapse;
+  width: max-content;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  text-align: center;
+  padding: 2px;
+  font-size: 11px;
+  min-width: 26px;
+  height: 26px;
+  vertical-align: middle;
+}
+
+thead tr:first-child th {
+  background: #e5e7eb;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+}
+
+thead tr:nth-child(2) th {
+  background: #f0f0f0;
+  font-size: 11px;
+}
+
+.habit-name {
+  min-width: 160px;
+  font-weight: bold;
+  text-align: left;
+  padding-left: 6px;
+  font-size: 12px;
+}
+
+/* ===================== */
+/* CHECKBOX */
+/* ===================== */
+input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+/* ===================== */
+/* CHART (SHORT HEIGHT) */
+/* ===================== */
+.chart-container {
+  margin-top: 8px;
+  background: white;
+  padding: 8px;
+  border-radius: 8px;
+  height: 180px;
+}
+
+canvas {
+  max-height: 160px;
+}
+
+
+th:nth-child(9),
+th:nth-child(16),
+th:nth-child(23),
+th:nth-child(30),
+td:nth-child(9),
+td:nth-child(16),
+td:nth-child(23),
+td:nth-child(30) {
+  border-left: 2px solid #cbd5e1;
+}
+
+
+.today {
+  background-color: #e0f2fe;
+}

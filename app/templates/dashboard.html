@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    <!-- TOP CARDS -->
+    <div class="stats">
+        <div class="card">
+            <h4>Total Habits</h4>
+            <p>{{ habits|length }}</p>
+        </div>
+
+        <div class="card">
+            <h4>Completed Today</h4>
+            <p>{{ completed_today }}</p>
+        </div>
+
+        <div class="card">
+            <h4>Progress</h4>
+            <p>{{ progress }}%</p>
+        </div>
+    </div>
+
+    <!-- HABIT GRID -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Habit</th>
+                    {% for day in range(1, 31) %}
+                        <th class="{% if day == today %}today{% endif %}">{{ day }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for habit in habits %}
+                <tr>
+                    <td class="habit-name">{{ habit.name }}</td>
+                    {% for day in range(1, 31) %}
+                    <td class="{% if day == today %}today{% endif %}">
+                        <input type="checkbox"
+                               data-habit="{{ habit.id }}"
+                               data-day="{{ day }}"
+                               {% if log_map.get((habit.id, day)) %}checked{% endif %}>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-container">
+        <canvas id="progressChart"></canvas>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const DAILY_PROGRESS = {{ daily_progress | tojson }};
+</script>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+{% endblock %}
