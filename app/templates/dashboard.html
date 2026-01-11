@@ -2,61 +2,168 @@
 
 {% block content %}
 
-<div class="dashboard">
+<div class="container-fluid py-3 px-md-4">
 
-    <!-- TOP CARDS -->
-    <div class="stats">
-        <div class="card">
-            <h4>Total Habits</h4>
-            <p>{{ habits|length }}</p>
-        </div>
-
-        <div class="card">
-            <h4>Completed Today</h4>
-            <p>{{ completed_today }}</p>
-        </div>
-
-        <div class="card">
-            <h4>Progress</h4>
-            <p>{{ progress }}%</p>
+    <!-- HEADER -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <h2 class="fw-bold text-dark mb-0">Habit Tracker</h2>
+            <p class="text-muted small">{{ current_month }} {{ current_year }}</p>
         </div>
     </div>
 
-    <!-- HABIT GRID -->
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Habit</th>
-                    {% for day in range(1, 31) %}
-                        <th class="{% if day == today %}today{% endif %}">{{ day }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
+    <!-- TOP STATS CARDS -->
+    <div class="row g-3 mb-4">
+        <!-- Total Habits Card -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <p class="text-muted small mb-1">Total Habits</p>
+                            <h3 class="fw-bold mb-0">{{ habits|length }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                                <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <tbody>
-                {% for habit in habits %}
-                <tr>
-                    <td class="habit-name">{{ habit.name }}</td>
-                    {% for day in range(1, 31) %}
-                    <td class="{% if day == today %}today{% endif %}">
-                        <input type="checkbox"
-                               data-habit="{{ habit.id }}"
-                               data-day="{{ day }}"
-                               {% if log_map.get((habit.id, day)) %}checked{% endif %}>
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <!-- Completed Today Card -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <p class="text-muted small mb-1">Completed Today</p>
+                            <h3 class="fw-bold mb-0" id="completed-today">{{ completed_today }}</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-success" viewBox="0 0 16 16">
+                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Card -->
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Progress</p>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <p class="text-muted small mb-1">Today</p>
+                                <h4 class="fw-bold mb-0" id="today-progress">{{ today_progress }}%</h4>
+                            </div>
+                        </div>
+                        <div class="col-6 border-start">
+                            <div class="text-center">
+                                <p class="text-muted small mb-1">Month</p>
+                                <h4 class="fw-bold mb-0" id="monthly-progress">{{ progress }}%</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- CHART -->
-    <div class="chart-container">
-        <canvas id="progressChart"></canvas>
+    <!-- HABIT TRACKING GRID -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">Daily Tracking</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 habit-table">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th class="habit-name-header">Habit</th>
+                                    {% for day in range(1, days_in_month + 1) %}
+                                    <th class="text-center day-header {% if day == current_day %}today-header{% endif %}">
+                                        {{ day }}
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if habits %}
+                                    {% for habit in habits %}
+                                    <tr>
+                                        <td class="habit-name">
+                                            <div class="d-flex align-items-center">
+                                                <span class="habit-indicator me-2"></span>
+                                                {{ habit.name }}
+                                            </div>
+                                        </td>
+                                        {% for day in range(1, days_in_month + 1) %}
+                                        <td class="text-center checkbox-cell {% if day == current_day %}today-cell{% endif %} {% if day > current_day %}future-cell{% endif %}">
+                                            <div class="form-check d-inline-block">
+                                                <input 
+                                                    class="form-check-input habit-checkbox" 
+                                                    type="checkbox" 
+                                                    data-habit="{{ habit.id }}" 
+                                                    data-day="{{ day }}"
+                                                    {% if log_map.get((habit.id, day)) %}checked{% endif %}
+                                                    {% if day > current_day %}disabled{% endif %}>
+                                            </div>
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="{{ days_in_month + 1 }}" class="text-center text-muted py-4">
+                                            No habits yet. Create your first habit to get started!
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- PROGRESS CHART -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">Monthly Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="saveToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage">
+                Habit updated successfully!
+            </div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
