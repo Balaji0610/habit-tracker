@@ -53,6 +53,7 @@ def dashboard():
         )
 
         today_progress = int((today_done / len(habits)) * 100) if habits else 0
+        print(today_date,"==========")
 
         # Daily progress array for chart
         daily_progress = []
