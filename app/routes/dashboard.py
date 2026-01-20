@@ -32,9 +32,14 @@ def dashboard():
 
         # Create log map with proper date comparison
         log_map = {}
+        log_map_json = {}  # JSON-serializable version
+        
         for log in logs:
             if log.log_date.year == current_year and log.log_date.month == current_month:
                 log_map[(log.habit_id, log.log_date.day)] = log.status
+                # Create string key for JSON: "habitId_day"
+                json_key = f"{log.habit_id}_{log.log_date.day}"
+                log_map_json[json_key] = log.status
 
         # Completed today
         completed_today = sum(
@@ -53,7 +58,6 @@ def dashboard():
         )
 
         today_progress = int((today_done / len(habits)) * 100) if habits else 0
-        print(today_date,"==========")
 
         # Daily progress array for chart
         daily_progress = []
@@ -61,10 +65,15 @@ def dashboard():
             done = sum(1 for h in habits if log_map.get((h.id, day), False))
             daily_progress.append(int((done / len(habits)) * 100) if habits else 0)
 
+        # Serialize habits for JavaScript
+        habits_json = [{"id": h.id, "name": h.name} for h in habits]
+
         return render_template(
             "dashboard.html",
             habits=habits,
+            habits_json=habits_json,
             log_map=log_map,
+            log_map_json=log_map_json,  # JSON-serializable version
             completed_today=completed_today,
             progress=progress,
             today_progress=today_progress,
@@ -77,6 +86,8 @@ def dashboard():
     
     except Exception as e:
         print(f"Error in dashboard: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return render_template("error.html", error="Failed to load dashboard"), 500
 
 
@@ -153,4 +164,124 @@ def save_habit_log():
         return jsonify({"success": False, "error": "Database error"}), 500
     except Exception as e:
         print(f"Error saving habit log: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": "Server error"}), 500
+
+
+@dashboard_bp.route("/api/habit", methods=["POST"])
+def add_habit():
+    """Add a new habit"""
+    try:
+        data = request.json
+        
+        # Validate input
+        if not data or "name" not in data or not data["name"].strip():
+            return jsonify({"success": False, "error": "Habit name is required"}), 400
+        
+        habit_name = data["name"].strip()
+        
+        # Check if habit already exists
+        existing_habit = Habit.query.filter_by(name=habit_name).first()
+        if existing_habit:
+            return jsonify({"success": False, "error": "Habit already exists"}), 400
+        
+        # Create new habit
+        new_habit = Habit(name=habit_name)
+        db.session.add(new_habit)
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "habit": {
+                "id": new_habit.id,
+                "name": new_habit.name
+            }
+        })
+    
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Database error: {str(e)}")
+        return jsonify({"success": False, "error": "Database error"}), 500
+    except Exception as e:
+        print(f"Error adding habit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": "Server error"}), 500
+
+
+@dashboard_bp.route("/api/habit/<int:habit_id>", methods=["PUT"])
+def edit_habit(habit_id):
+    """Edit an existing habit"""
+    try:
+        data = request.json
+        
+        # Validate input
+        if not data or "name" not in data or not data["name"].strip():
+            return jsonify({"success": False, "error": "Habit name is required"}), 400
+        
+        habit_name = data["name"].strip()
+        
+        # Get habit
+        habit = Habit.query.get(habit_id)
+        if not habit:
+            return jsonify({"success": False, "error": "Habit not found"}), 404
+        
+        # Check if new name conflicts with another habit
+        existing_habit = Habit.query.filter(
+            Habit.name == habit_name,
+            Habit.id != habit_id
+        ).first()
+        if existing_habit:
+            return jsonify({"success": False, "error": "Another habit with this name already exists"}), 400
+        
+        # Update habit
+        habit.name = habit_name
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "habit": {
+                "id": habit.id,
+                "name": habit.name
+            }
+        })
+    
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Database error: {str(e)}")
+        return jsonify({"success": False, "error": "Database error"}), 500
+    except Exception as e:
+        print(f"Error editing habit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": "Server error"}), 500
+
+
+@dashboard_bp.route("/api/habit/<int:habit_id>", methods=["DELETE"])
+def delete_habit(habit_id):
+    """Delete a habit and all its logs"""
+    try:
+        # Get habit
+        habit = Habit.query.get(habit_id)
+        if not habit:
+            return jsonify({"success": False, "error": "Habit not found"}), 404
+        
+        # Delete all logs for this habit
+        HabitLog.query.filter_by(habit_id=habit_id).delete()
+        
+        # Delete habit
+        db.session.delete(habit)
+        db.session.commit()
+        
+        return jsonify({"success": True})
+    
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Database error: {str(e)}")
+        return jsonify({"success": False, "error": "Database error"}), 500
+    except Exception as e:
+        print(f"Error deleting habit: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "error": "Server error"}), 500

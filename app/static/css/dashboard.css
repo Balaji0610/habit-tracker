@@ -1,5 +1,5 @@
 /* =====================
-   CUSTOM VARIABLES
+   CSS VARIABLES
    ===================== */
 :root {
   --primary-color: #0d6efd;
@@ -7,151 +7,328 @@
   --danger-color: #dc3545;
   --light-gray: #f8f9fa;
   --border-color: #dee2e6;
-  --today-bg: #cfe2ff;
-  --future-bg: #f8f9fa;
+  --today-bg: #e3f2fd;
+  
+  /* Light mode colors */
+  --bg-color: #f5f6f8;
+  --card-bg: #ffffff;
+  --text-color: #212529;
+  --text-muted: #6c757d;
+  --card-header-bg: #ffffff;
+  --table-header-bg: #f8f9fa;
+  --task-item-bg: #f8f9fa;
+  --task-item-hover: #e9ecef;
+  --border-light: #e0e0e0;
 }
 
-/* =====================
-   GLOBAL STYLES
-   ===================== */
-body {
-  background-color: #f5f6f8;
+[data-theme="dark"] {
+  --bg-color: #1a1d23;
+  --card-bg: #2d3139;
+  --text-color: #e8eaed;
+  --text-muted: #9aa0a6;
+  --card-header-bg: #363a43;
+  --table-header-bg: #363a43;
+  --task-item-bg: #363a43;
+  --task-item-hover: #404550;
+  --border-light: #404550;
+  --today-bg: #1e3a5f;
+  --border-color: #404550;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.container-fluid {
+  max-width: 100%;
+  height: 100vh;
 }
 
 /* =====================
-   HABIT TABLE
+   THEME TOGGLE BUTTON
    ===================== */
-.habit-table {
-  font-size: 0.875rem;
+#themeToggle {
+  padding: 0.375rem 0.75rem;
+  transition: all 0.3s ease;
 }
 
-.habit-name-header {
-  min-width: 200px;
-  font-weight: 600;
-  position: sticky;
-  left: 0;
-  background-color: #f8f9fa;
-  z-index: 10;
-  border-right: 2px solid var(--border-color);
+[data-theme="dark"] #themeToggle {
+  border-color: var(--border-color);
+  color: var(--text-color);
 }
 
-.habit-name {
-  min-width: 200px;
-  font-weight: 500;
-  position: sticky;
-  left: 0;
-  background-color: white;
-  z-index: 9;
-  border-right: 2px solid var(--border-color);
-  padding: 12px 16px;
+#themeToggle:hover {
+  transform: rotate(20deg);
 }
 
-.habit-indicator {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
+/* =====================
+   STAT CARDS
+   ===================== */
+.stat-card-compact {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 6px;
+  transition: box-shadow 0.2s ease, background-color 0.3s ease;
+  background-color: var(--card-bg);
+}
+
+[data-theme="dark"] .stat-card-compact {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.stat-card-compact:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* =====================
+   TASK LIST
+   ===================== */
+.task-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-item-compact {
+  background-color: var(--task-item-bg);
+  border-left: 2px solid var(--primary-color);
+  transition: background-color 0.2s ease;
+  font-size: 0.75rem;
+}
+
+.task-item-compact:hover {
+  background-color: var(--task-item-hover);
+}
+
+.task-item-compact .task-actions {
+  display: none;
+}
+
+.task-item-compact:hover .task-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.task-indicator-compact {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: var(--primary-color);
+  flex-shrink: 0;
 }
 
-.day-header {
-  min-width: 40px;
+.edit-task-btn,
+.delete-task-btn {
+  padding: 2px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.edit-task-btn:hover {
+  opacity: 0.7;
+}
+
+.delete-task-btn:hover {
+  opacity: 0.7;
+}
+
+/* =====================
+   COMPACT GRID TABLE
+   ===================== */
+.compact-grid-table {
+  font-size: 0.7rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.compact-grid-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--card-bg);
+}
+
+.habit-col-compact {
+  min-width: 100px;
+  max-width: 100px;
+  font-size: 0.7rem;
   font-weight: 500;
-  padding: 8px 4px;
-  font-size: 0.8rem;
+  background-color: var(--table-header-bg);
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  padding: 4px 6px;
+  white-space: nowrap;
+  border-right: 2px solid var(--border-color);
 }
 
-.checkbox-cell {
-  padding: 8px 4px;
+.day-col-compact {
+  text-align: center;
+  padding: 3px 2px;
+  font-size: 0.65rem;
+  min-width: 22px;
+  max-width: 22px;
+  background-color: var(--table-header-bg);
+  font-weight: 500;
+}
+
+.checkbox-col-compact {
+  text-align: center;
+  padding: 3px 2px;
+  min-width: 22px;
+  max-width: 22px;
   vertical-align: middle;
-  transition: background-color 0.15s ease;
+  background-color: var(--card-bg);
 }
 
-.checkbox-cell:hover:not(.future-cell) {
-  background-color: #f0f0f0;
-}
-
-/* Today column highlighting */
-.today-header {
-  background-color: var(--today-bg) !important;
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.today-cell {
-  background-color: rgba(13, 110, 253, 0.05);
-}
-
-/* Future dates (disabled) */
-.future-cell {
-  background-color: var(--future-bg);
-  cursor: not-allowed;
-}
-
-/* Checkbox styling */
-.habit-checkbox {
+.habit-checkbox-wire {
+  width: 13px;
+  height: 13px;
   cursor: pointer;
-  width: 18px;
-  height: 18px;
   margin: 0;
-  transition: all 0.2s ease;
+  accent-color: var(--success-color);
 }
 
-.habit-checkbox:checked {
+.habit-checkbox-wire:checked {
   background-color: var(--success-color);
   border-color: var(--success-color);
 }
 
-.habit-checkbox:hover:not(:disabled) {
-  transform: scale(1.1);
-  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
-}
-
-.habit-checkbox:disabled {
+.habit-checkbox-wire:disabled {
   cursor: not-allowed;
-  opacity: 0.3;
+  opacity: 0.25;
 }
 
-/* Week separators (every 7th column) */
-.day-header:nth-child(8n+1),
-.checkbox-cell:nth-child(8n+1) {
-  border-left: 2px solid var(--border-color);
+.habit-checkbox-wire.loading {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Today column highlight */
+.today-highlight {
+  background-color: var(--today-bg) !important;
+  font-weight: 600;
+}
+
+/* Week separators */
+.day-col-compact:nth-child(8),
+.day-col-compact:nth-child(15),
+.day-col-compact:nth-child(22),
+.day-col-compact:nth-child(29),
+.checkbox-col-compact:nth-child(8),
+.checkbox-col-compact:nth-child(15),
+.checkbox-col-compact:nth-child(22),
+.checkbox-col-compact:nth-child(29) {
+  border-left: 2px solid #adb5bd;
 }
 
 /* =====================
-   RESPONSIVE TABLE
+   SCROLLBAR
    ===================== */
-.table-responsive {
-  max-height: 600px;
-  overflow-y: auto;
+.card-body::-webkit-scrollbar,
+.table-responsive::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* Sticky header */
-.sticky-top {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+.card-body::-webkit-scrollbar-track,
+.table-responsive::-webkit-scrollbar-track {
+  background: var(--task-item-bg);
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb,
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover,
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* =====================
-   CHART
+   CARDS
    ===================== */
-.chart-container {
-  width: 100%;
+.card {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 6px;
+  background-color: var(--card-bg);
+  transition: background-color 0.3s ease;
 }
 
+[data-theme="dark"] .card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.card-header {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  background-color: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s ease;
+}
+
+.card-body {
+  font-size: 0.8rem;
+}
+
+/* =====================
+   MODALS
+   ===================== */
+[data-theme="dark"] .modal-content {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .modal-header {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-footer {
+  border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .form-control {
+  background-color: var(--task-item-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .form-control:focus {
+  background-color: var(--task-item-bg);
+  border-color: var(--primary-color);
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .btn-close {
+  filter: invert(1);
+}
+
+/* =====================
+   CHARTS
+   ===================== */
 canvas {
-  max-height: 250px;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* =====================
-   TOAST NOTIFICATIONS
+   TOAST
    ===================== */
-.toast {
-  min-width: 250px;
-}
-
 .toast.bg-success {
   background-color: var(--success-color) !important;
   color: white;
@@ -162,82 +339,95 @@ canvas {
   color: white;
 }
 
-.toast .btn-close {
+.toast .btn-close-white {
   filter: brightness(0) invert(1);
 }
 
 /* =====================
-   RESPONSIVE ADJUSTMENTS
+   TABLE BORDERS
    ===================== */
-@media (max-width: 768px) {
-  .habit-name-header,
-  .habit-name {
-    min-width: 150px;
-  }
-  
-  .day-header {
-    min-width: 32px;
-    font-size: 0.75rem;
-  }
-  
-  .habit-checkbox {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .checkbox-cell {
-    padding: 6px 2px;
-  }
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid var(--border-light);
 }
 
-@media (max-width: 576px) {
+.compact-grid-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .compact-grid-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* =====================
+   RESPONSIVE
+   ===================== */
+@media (max-width: 992px) {
+  html, body {
+    overflow: auto;
+    height: auto;
+  }
+  
   .container-fluid {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    height: auto !important;
+    min-height: 100vh;
   }
   
-  .habit-name-header,
-  .habit-name {
-    min-width: 120px;
-    font-size: 0.8rem;
+  .row {
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .habit-col-compact {
+    min-width: 80px;
+    max-width: 80px;
   }
   
-  .day-header {
-    min-width: 28px;
-    padding: 6px 2px;
+  .day-col-compact,
+  .checkbox-col-compact {
+    min-width: 20px;
+    max-width: 20px;
+  }
+  
+  .habit-checkbox-wire {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .task-item-compact .task-actions {
+    display: flex !important;
   }
 }
 
 /* =====================
-   CARD ENHANCEMENTS
+   LAYOUT UTILITIES
    ===================== */
-.card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.flex-shrink-0 {
+  flex-shrink: 0;
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+.flex-grow-1 {
+  flex-grow: 1;
+  min-height: 0;
 }
 
-/* =====================
-   LOADING STATE
-   ===================== */
-.habit-checkbox.loading {
-  pointer-events: none;
-  opacity: 0.5;
+.overflow-hidden {
+  overflow: hidden;
 }
 
-/* =====================
-   PRINT STYLES
-   ===================== */
-@media print {
-  .card {
-    box-shadow: none !important;
-    border: 1px solid #dee2e6 !important;
-  }
-  
-  .btn, .toast {
-    display: none !important;
-  }
+.overflow-auto {
+  overflow: auto;
+}
+
+.h-100 {
+  height: 100%;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
 }

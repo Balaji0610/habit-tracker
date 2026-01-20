@@ -2,129 +2,123 @@
 
 {% block content %}
 
-<div class="container-fluid py-3 px-md-4">
+<div class="container-fluid h-100 d-flex flex-column p-2">
 
-    <!-- HEADER -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <h2 class="fw-bold text-dark mb-0">Habit Tracker</h2>
-            <p class="text-muted small">{{ current_month }} {{ current_year }}</p>
+    <!-- TOP BAR - Stats + Theme Toggle + Add Button -->
+    <div class="row g-2 mb-2 flex-shrink-0">
+        <div class="col-md-3">
+            <div class="card stat-card-compact">
+                <div class="card-body text-center py-2">
+                    <small class="text-muted d-block mb-1">Tasks</small>
+                    <h4 class="fw-bold mb-0" id="total-tasks">{{ habits|length }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card-compact">
+                <div class="card-body text-center py-2">
+                    <small class="text-muted d-block mb-1">Today Completed</small>
+                    <h4 class="fw-bold mb-0" id="completed-today">{{ completed_today }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card-compact">
+                <div class="card-body text-center py-2">
+                    <small class="text-muted d-block mb-1">Progress</small>
+                    <h4 class="fw-bold mb-0" id="today-progress">{{ today_progress }}%</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button class="btn btn-primary btn-sm flex-grow-1" data-bs-toggle="modal" data-bs-target="#addHabitModal">
+                <i class="bi bi-plus-circle me-1"></i>Add Task
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="themeToggle" title="Toggle Dark Mode">
+                <i class="bi bi-moon-fill" id="themeIcon"></i>
+            </button>
         </div>
     </div>
 
-    <!-- TOP STATS CARDS -->
-    <div class="row g-3 mb-4">
-        <!-- Total Habits Card -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <p class="text-muted small mb-1">Total Habits</p>
-                            <h3 class="fw-bold mb-0">{{ habits|length }}</h3>
-                        </div>
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
-                                <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
-                            </svg>
-                        </div>
-                    </div>
+    <!-- MIDDLE ROW - Main Content -->
+    <div class="row g-2 mb-2 flex-grow-1 overflow-hidden">
+        
+        <!-- LEFT: Task List -->
+        <div class="col-lg-2 d-flex">
+            <div class="card w-100 d-flex flex-column">
+                <div class="card-header bg-white py-2 border-0">
+                    <h6 class="fw-bold mb-0 small">Tasks</h6>
                 </div>
-            </div>
-        </div>
-
-        <!-- Completed Today Card -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <p class="text-muted small mb-1">Completed Today</p>
-                            <h3 class="fw-bold mb-0" id="completed-today">{{ completed_today }}</h3>
-                        </div>
-                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-success" viewBox="0 0 16 16">
-                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Progress Card -->
-        <div class="col-12 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <p class="text-muted small mb-3">Progress</p>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <p class="text-muted small mb-1">Today</p>
-                                <h4 class="fw-bold mb-0" id="today-progress">{{ today_progress }}%</h4>
+                <div class="card-body p-2 overflow-auto flex-grow-1" id="taskListContainer">
+                    <div class="task-list-compact">
+                        {% if habits %}
+                            {% for habit in habits %}
+                            <div class="task-item-compact mb-1 p-2 rounded d-flex align-items-center justify-content-between" data-habit-id="{{ habit.id }}">
+                                <div class="d-flex align-items-center flex-grow-1 overflow-hidden">
+                                    <div class="task-indicator-compact me-2"></div>
+                                    <span class="small text-truncate" style="font-size: 0.75rem;">{{ habit.name }}</span>
+                                </div>
+                                <div class="task-actions">
+                                    <button class="btn btn-sm btn-link p-0 text-primary edit-task-btn" data-habit-id="{{ habit.id }}" data-habit-name="{{ habit.name }}" title="Edit">
+                                        <i class="bi bi-pencil" style="font-size: 0.75rem;"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-link p-0 text-danger delete-task-btn" data-habit-id="{{ habit.id }}" title="Delete">
+                                        <i class="bi bi-trash" style="font-size: 0.75rem;"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-6 border-start">
-                            <div class="text-center">
-                                <p class="text-muted small mb-1">Month</p>
-                                <h4 class="fw-bold mb-0" id="monthly-progress">{{ progress }}%</h4>
-                            </div>
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0 text-center" id="noTasksMessage">No tasks yet. Click "Add Task" to create one!</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- HABIT TRACKING GRID -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0 fw-bold">Daily Tracking</h5>
+        <!-- CENTER: Daily Checkbox Grid -->
+        <div class="col-lg-7 d-flex">
+            <div class="card w-100 d-flex flex-column">
+                <div class="card-header bg-white py-2 border-0">
+                    <h6 class="fw-bold mb-0 small">Daily Tracker - {{ current_month }} {{ current_year }}</h6>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0 habit-table">
-                            <thead class="table-light sticky-top">
+                <div class="card-body p-1 overflow-auto flex-grow-1">
+                    <div class="table-responsive h-100">
+                        <table class="table table-sm table-bordered mb-0 compact-grid-table" id="habitGrid">
+                            <thead class="sticky-top">
                                 <tr>
-                                    <th class="habit-name-header">Habit</th>
+                                    <th class="habit-col-compact">Habit</th>
                                     {% for day in range(1, days_in_month + 1) %}
-                                    <th class="text-center day-header {% if day == current_day %}today-header{% endif %}">
+                                    <th class="day-col-compact {% if day == current_day %}today-highlight{% endif %}">
                                         {{ day }}
                                     </th>
                                     {% endfor %}
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="habitGridBody">
                                 {% if habits %}
                                     {% for habit in habits %}
-                                    <tr>
-                                        <td class="habit-name">
-                                            <div class="d-flex align-items-center">
-                                                <span class="habit-indicator me-2"></span>
-                                                {{ habit.name }}
-                                            </div>
+                                    <tr data-habit-id="{{ habit.id }}">
+                                        <td class="habit-col-compact">
+                                            <span class="text-truncate d-block" style="max-width: 100px;">{{ habit.name }}</span>
                                         </td>
                                         {% for day in range(1, days_in_month + 1) %}
-                                        <td class="text-center checkbox-cell {% if day == current_day %}today-cell{% endif %} {% if day > current_day %}future-cell{% endif %}">
-                                            <div class="form-check d-inline-block">
-                                                <input 
-                                                    class="form-check-input habit-checkbox" 
-                                                    type="checkbox" 
-                                                    data-habit="{{ habit.id }}" 
-                                                    data-day="{{ day }}"
-                                                    {% if log_map.get((habit.id, day)) %}checked{% endif %}
-                                                    {% if day > current_day %}disabled{% endif %}>
-                                            </div>
+                                        <td class="checkbox-col-compact {% if day == current_day %}today-highlight{% endif %}">
+                                            <input 
+                                                class="form-check-input habit-checkbox-wire" 
+                                                type="checkbox" 
+                                                data-habit="{{ habit.id }}" 
+                                                data-day="{{ day }}"
+                                                {% if log_map.get((habit.id, day)) %}checked{% endif %}
+                                                {% if day > current_day %}disabled{% endif %}>
                                         </td>
                                         {% endfor %}
                                     </tr>
                                     {% endfor %}
                                 {% else %}
-                                    <tr>
-                                        <td colspan="{{ days_in_month + 1 }}" class="text-center text-muted py-4">
-                                            No habits yet. Create your first habit to get started!
+                                    <tr id="noHabitsRow">
+                                        <td colspan="{{ days_in_month + 1 }}" class="text-center text-muted py-3 small">
+                                            No habits yet. Add your first habit to start tracking!
                                         </td>
                                     </tr>
                                 {% endif %}
@@ -134,19 +128,45 @@
                 </div>
             </div>
         </div>
+
+        <!-- RIGHT: Circle Chart -->
+        <div class="col-lg-3 d-flex">
+            <div class="card w-100 d-flex flex-column">
+                <div class="card-header bg-white py-2 border-0">
+                    <h6 class="fw-bold mb-0 small">Completion</h6>
+                </div>
+                <div class="card-body p-2 d-flex flex-column justify-content-center align-items-center">
+                    <div style="max-width: 180px; max-height: 180px; width: 100%;">
+                        <canvas id="circleChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- PROGRESS CHART -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0 fw-bold">Monthly Progress</h5>
+    <!-- BOTTOM ROW - Charts -->
+    <div class="row g-2 flex-shrink-0" style="height: 200px;">
+        
+        <!-- LEFT: Area Chart -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header bg-white py-1 border-0">
+                    <h6 class="fw-bold mb-0 small">Daily Progress</h6>
                 </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height: 250px;">
-                        <canvas id="progressChart"></canvas>
-                    </div>
+                <div class="card-body p-2">
+                    <canvas id="areaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Horizontal Bar Chart -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header bg-white py-1 border-0">
+                    <h6 class="fw-bold mb-0 small">Habit Progress</h6>
+                </div>
+                <div class="card-body p-2">
+                    <canvas id="barChart"></canvas>
                 </div>
             </div>
         </div>
@@ -154,14 +174,63 @@
 
 </div>
 
-<!-- Toast Notification -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-    <div id="saveToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-            <div class="toast-body" id="toastMessage">
-                Habit updated successfully!
+<!-- Add Habit Modal -->
+<div class="modal fade" id="addHabitModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Habit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <div class="modal-body">
+                <form id="addHabitForm">
+                    <div class="mb-3">
+                        <label for="habitName" class="form-label">Habit Name</label>
+                        <input type="text" class="form-control" id="habitName" placeholder="e.g., Morning Exercise" required>
+                        <div class="invalid-feedback" id="addHabitError"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveHabitBtn">Add Habit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Habit Modal -->
+<div class="modal fade" id="editHabitModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Habit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editHabitForm">
+                    <input type="hidden" id="editHabitId">
+                    <div class="mb-3">
+                        <label for="editHabitName" class="form-label">Habit Name</label>
+                        <input type="text" class="form-control" id="editHabitName" required>
+                        <div class="invalid-feedback" id="editHabitError"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateHabitBtn">Update Habit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-2" style="z-index: 11">
+    <div id="saveToast" class="toast align-items-center border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body small py-2" id="toastMessage">Saved!</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     </div>
 </div>
@@ -170,6 +239,14 @@
 
 <script>
     const DAILY_PROGRESS = {{ daily_progress | tojson }};
+    const HABITS = {{ habits_json | tojson }};
+    const COMPLETED_TODAY = {{ completed_today }};
+    const TOTAL_HABITS = {{ habits|length }};
+    const TODAY_PROGRESS = {{ today_progress }};
+    const MONTHLY_PROGRESS = {{ progress }};
+    const CURRENT_DAY = {{ current_day }};
+    const DAYS_IN_MONTH = {{ days_in_month }};
+    const LOG_MAP = {{ log_map_json | tojson }};
 </script>
 
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
