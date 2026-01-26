@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateChartColors(theme) {
     const isDark = theme === 'dark';
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
-    const textColor = isDark ? '#e8eaed' : '#212529';
+    const textColor = isDark ? '#f9fafb' : '#111827';
 
     if (window.areaChart) {
       window.areaChart.options.scales.x.ticks.color = textColor;
@@ -85,11 +85,64 @@ document.addEventListener("DOMContentLoaded", () => {
      ===================== */
   function updateStats(data) {
     if (data.completed_today !== undefined) {
-      document.getElementById('completed-today').textContent = data.completed_today;
+      const completedEl = document.getElementById('completed-today');
+      animateNumber(completedEl, parseInt(completedEl.textContent), data.completed_today);
     }
     if (data.today_progress !== undefined) {
-      document.getElementById('today-progress').textContent = data.today_progress + '%';
+      const progressEl = document.getElementById('today-progress');
+      animateNumber(progressEl, parseInt(progressEl.textContent), data.today_progress, '%');
     }
+  }
+
+  function animateNumber(element, start, end, suffix = '') {
+    const duration = 500;
+    const startTime = performance.now();
+    
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const current = Math.floor(start + (end - start) * easeOutQuad(progress));
+      element.textContent = current + suffix;
+      
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+    
+    requestAnimationFrame(update);
+  }
+
+  function easeOutQuad(t) {
+    return t * (2 - t);
+  }
+
+  /* =====================
+     CALCULATE TODAY'S STATS
+     ===================== */
+  function calculateTodayStats() {
+    // Get all checkboxes for today's column (CURRENT_DAY)
+    const todayCheckboxes = document.querySelectorAll(`[data-day="${CURRENT_DAY}"]`);
+    
+    if (todayCheckboxes.length === 0) {
+      return { completed: 0, total: 0, percentage: 0 };
+    }
+    
+    let completedCount = 0;
+    todayCheckboxes.forEach(checkbox => {
+      if (checkbox.checked && !checkbox.disabled) {
+        completedCount++;
+      }
+    });
+    
+    const totalCount = todayCheckboxes.length;
+    const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    
+    return {
+      completed: completedCount,
+      total: totalCount,
+      percentage: percentage
+    };
   }
 
   /* =====================
@@ -99,6 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkboxes = document.querySelectorAll('.habit-checkbox-wire');
     const habitsByDay = {};
     
+    // Group checkboxes by day
     checkboxes.forEach(cb => {
       const day = parseInt(cb.dataset.day);
       if (!habitsByDay[day]) {
@@ -107,6 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
       habitsByDay[day].push(cb.checked);
     });
     
+    // Calculate daily progress for area chart
     const newDailyProgress = [];
     for (let day = 1; day <= CURRENT_DAY; day++) {
       if (habitsByDay[day]) {
@@ -119,26 +174,38 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
-    if (habitsByDay[CURRENT_DAY]) {
-      const todayCompleted = habitsByDay[CURRENT_DAY].filter(c => c).length;
-      const todayTotal = habitsByDay[CURRENT_DAY].length;
-      const todayPercentage = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
+    // Calculate today's stats accurately
+    const todayStats = calculateTodayStats();
+    
+    // Update stat cards with accurate numbers
+    const completedEl = document.getElementById('completed-today');
+    const progressEl = document.getElementById('today-progress');
+    
+    if (completedEl && progressEl) {
+      const currentCompleted = parseInt(completedEl.textContent) || 0;
+      const currentProgress = parseInt(progressEl.textContent) || 0;
       
-      document.getElementById('completed-today').textContent = todayCompleted;
-      document.getElementById('today-progress').textContent = todayPercentage + '%';
-      
-      if (window.circleChart) {
-        window.circleChart.data.datasets[0].data = [todayPercentage, 100 - todayPercentage];
-        window.circleChart.update('none');
-      }
+      animateNumber(completedEl, currentCompleted, todayStats.completed);
+      animateNumber(progressEl, currentProgress, todayStats.percentage, '%');
     }
     
+    // Update circle chart
+    if (window.circleChart) {
+      window.circleChart.data.datasets[0].data = [
+        todayStats.percentage, 
+        100 - todayStats.percentage
+      ];
+      window.circleChart.update('active');
+    }
+    
+    // Update area chart
     if (window.areaChart) {
       window.areaChart.data.labels = newDailyProgress.map((_, i) => i + 1);
       window.areaChart.data.datasets[0].data = newDailyProgress;
-      window.areaChart.update('none');
+      window.areaChart.update('active');
     }
     
+    // Update bar chart (habit-wise progress)
     if (window.barChart && HABITS) {
       const habitProgress = HABITS.map(habit => {
         const habitCheckboxes = document.querySelectorAll(`[data-habit="${habit.id}"]`);
@@ -157,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       
       window.barChart.data.datasets[0].data = habitProgress;
-      window.barChart.update('none');
+      window.barChart.update('active');
     }
   }
 
@@ -186,16 +253,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
 
         if (response.ok && data.success) {
+          // Recalculate all progress metrics
           recalculateProgress();
-          showToast("✓", true);
+          showToast(isChecked ? "✓ Marked complete!" : "Unmarked", true);
         } else {
           this.checked = !isChecked;
-          showToast("✗", false);
+          showToast("Failed to save", false);
         }
       } catch (error) {
         console.error("Error:", error);
         this.checked = !isChecked;
-        showToast("Error", false);
+        showToast("Connection error", false);
       } finally {
         this.classList.remove('loading');
       }
@@ -208,6 +276,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const addHabitModal = new bootstrap.Modal(document.getElementById('addHabitModal'));
   const saveHabitBtn = document.getElementById('saveHabitBtn');
   const habitNameInput = document.getElementById('habitName');
+  const addHabitForm = document.getElementById('addHabitForm');
+
+  // Handle Enter key in form
+  addHabitForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveHabitBtn.click();
+  });
 
   saveHabitBtn.addEventListener('click', async () => {
     const habitName = habitNameInput.value.trim();
@@ -218,8 +293,15 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (habitName.length > 50) {
+      habitNameInput.classList.add('is-invalid');
+      document.getElementById('addHabitError').textContent = 'Habit name is too long (max 50 characters)';
+      return;
+    }
+
     saveHabitBtn.disabled = true;
-    saveHabitBtn.textContent = 'Adding...';
+    const originalText = saveHabitBtn.innerHTML;
+    saveHabitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Adding...';
 
     try {
       const response = await fetch('/api/habit', {
@@ -234,20 +316,22 @@ document.addEventListener("DOMContentLoaded", () => {
         addHabitModal.hide();
         habitNameInput.value = '';
         habitNameInput.classList.remove('is-invalid');
+        showToast('Habit added successfully!', true);
         
-        // Reload page to show new habit
-        window.location.reload();
+        // Reload page after short delay
+        setTimeout(() => window.location.reload(), 800);
       } else {
         habitNameInput.classList.add('is-invalid');
         document.getElementById('addHabitError').textContent = data.error || 'Failed to add habit';
+        saveHabitBtn.disabled = false;
+        saveHabitBtn.innerHTML = originalText;
       }
     } catch (error) {
       console.error('Error:', error);
       habitNameInput.classList.add('is-invalid');
-      document.getElementById('addHabitError').textContent = 'Network error';
-    } finally {
+      document.getElementById('addHabitError').textContent = 'Network error. Please try again.';
       saveHabitBtn.disabled = false;
-      saveHabitBtn.textContent = 'Add Habit';
+      saveHabitBtn.innerHTML = originalText;
     }
   });
 
@@ -263,6 +347,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateHabitBtn = document.getElementById('updateHabitBtn');
   const editHabitNameInput = document.getElementById('editHabitName');
   const editHabitIdInput = document.getElementById('editHabitId');
+  const editHabitForm = document.getElementById('editHabitForm');
+
+  // Handle Enter key in form
+  editHabitForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    updateHabitBtn.click();
+  });
 
   document.querySelectorAll('.edit-task-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -287,8 +378,15 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (habitName.length > 50) {
+      editHabitNameInput.classList.add('is-invalid');
+      document.getElementById('editHabitError').textContent = 'Habit name is too long (max 50 characters)';
+      return;
+    }
+
     updateHabitBtn.disabled = true;
-    updateHabitBtn.textContent = 'Updating...';
+    const originalText = updateHabitBtn.innerHTML;
+    updateHabitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
 
     try {
       const response = await fetch(`/api/habit/${habitId}`, {
@@ -301,18 +399,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (response.ok && data.success) {
         editHabitModal.hide();
-        window.location.reload();
+        showToast('Habit updated successfully!', true);
+        setTimeout(() => window.location.reload(), 800);
       } else {
         editHabitNameInput.classList.add('is-invalid');
         document.getElementById('editHabitError').textContent = data.error || 'Failed to update habit';
+        updateHabitBtn.disabled = false;
+        updateHabitBtn.innerHTML = originalText;
       }
     } catch (error) {
       console.error('Error:', error);
       editHabitNameInput.classList.add('is-invalid');
-      document.getElementById('editHabitError').textContent = 'Network error';
-    } finally {
+      document.getElementById('editHabitError').textContent = 'Network error. Please try again.';
       updateHabitBtn.disabled = false;
-      updateHabitBtn.textContent = 'Update Habit';
+      updateHabitBtn.innerHTML = originalText;
     }
   });
 
@@ -327,9 +427,12 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener('click', async () => {
       const habitId = btn.dataset.habitId;
       
-      if (!confirm('Are you sure you want to delete this habit? All tracking data will be lost.')) {
+      if (!confirm('Are you sure you want to delete this habit? All tracking data will be permanently lost.')) {
         return;
       }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
       try {
         const response = await fetch(`/api/habit/${habitId}`, {
@@ -339,14 +442,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
 
         if (response.ok && data.success) {
-          showToast('Habit deleted', true);
-          setTimeout(() => window.location.reload(), 1000);
+          showToast('Habit deleted successfully', true);
+          setTimeout(() => window.location.reload(), 800);
         } else {
           showToast('Failed to delete habit', false);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-trash-fill"></i>';
         }
       } catch (error) {
         console.error('Error:', error);
-        showToast('Network error', false);
+        showToast('Connection error', false);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-trash-fill"></i>';
       }
     });
   });
@@ -357,9 +464,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentTheme = htmlElement.getAttribute('data-theme');
   const isDark = currentTheme === 'dark';
   const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
-  const textColor = isDark ? '#e8eaed' : '#212529';
+  const textColor = isDark ? '#f9fafb' : '#111827';
 
-  // Circle Chart
+  // Calculate accurate today stats on page load
+  const initialTodayStats = calculateTodayStats();
+
+  // Circle Chart (Doughnut)
   const circleCanvas = document.getElementById("circleChart");
   if (circleCanvas) {
     const circleCtx = circleCanvas.getContext("2d");
@@ -368,32 +478,53 @@ document.addEventListener("DOMContentLoaded", () => {
       data: {
         labels: ["Completed", "Remaining"],
         datasets: [{
-          data: [TODAY_PROGRESS, 100 - TODAY_PROGRESS],
-          backgroundColor: ["#198754", isDark ? "#404550" : "#e9ecef"],
-          borderWidth: 0
+          data: [initialTodayStats.percentage, 100 - initialTodayStats.percentage],
+          backgroundColor: [
+            isDark ? "#10b981" : "#10b981",
+            isDark ? "#374151" : "#e5e7eb"
+          ],
+          borderWidth: 0,
+          borderRadius: 4,
+          spacing: 2
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: true,
+        aspectRatio: 1,
         plugins: {
           legend: {
-            position: 'bottom',
-            labels: { padding: 10, font: { size: 10 }, color: textColor }
+            display: false
           },
           tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: { size: 12 },
+            bodyFont: { size: 11 },
             callbacks: {
-              label: (context) => context.label + ': ' + context.parsed + '%'
+              label: (context) => {
+                const label = context.label || '';
+                const value = context.parsed || 0;
+                if (context.dataIndex === 0) {
+                  return `${label}: ${initialTodayStats.completed}/${initialTodayStats.total} (${value}%)`;
+                }
+                return `${label}: ${value}%`;
+              }
             }
           }
         },
-        cutout: '65%',
-        animation: { duration: 0 }
+        cutout: '70%',
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1000,
+          easing: 'easeInOutQuart'
+        }
       }
     });
   }
 
-  // Area Chart
+  // Area Chart (Line with fill)
   const areaCanvas = document.getElementById("areaChart");
   if (areaCanvas && typeof DAILY_PROGRESS !== "undefined") {
     const areaCtx = areaCanvas.getContext("2d");
@@ -402,53 +533,76 @@ document.addEventListener("DOMContentLoaded", () => {
       data: {
         labels: DAILY_PROGRESS.map((_, i) => i + 1),
         datasets: [{
-          label: "Daily %",
+          label: "Daily Progress",
           data: DAILY_PROGRESS,
           fill: true,
           tension: 0.4,
-          backgroundColor: "rgba(13, 110, 253, 0.15)",
-          borderColor: "#0d6efd",
-          pointBackgroundColor: "#0d6efd",
+          backgroundColor: isDark ? "rgba(99, 102, 241, 0.15)" : "rgba(79, 70, 229, 0.15)",
+          borderColor: isDark ? "#6366f1" : "#4f46e5",
+          pointBackgroundColor: isDark ? "#6366f1" : "#4f46e5",
           pointBorderColor: "#fff",
-          pointBorderWidth: 1,
-          pointRadius: 2,
-          pointHoverRadius: 4,
-          borderWidth: 2
+          pointBorderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointHoverBorderWidth: 3,
+          borderWidth: 2.5
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 8,
-            titleFont: { size: 10 },
-            bodyFont: { size: 9 },
+            padding: 10,
+            titleFont: { size: 11 },
+            bodyFont: { size: 10 },
             callbacks: {
               title: (context) => 'Day ' + context[0].label,
-              label: (context) => context.parsed.y + '%'
+              label: (context) => 'Progress: ' + context.parsed.y + '%'
             }
           }
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10, color: textColor }
+            ticks: { 
+              font: { size: 10 }, 
+              maxRotation: 0, 
+              autoSkip: true, 
+              maxTicksLimit: 15, 
+              color: textColor 
+            }
           },
           y: {
-            min: 0, max: 100,
-            grid: { color: gridColor },
-            ticks: { stepSize: 25, font: { size: 9 }, callback: (value) => value + '%', color: textColor }
+            min: 0, 
+            max: 100,
+            grid: { 
+              color: gridColor,
+              drawBorder: false 
+            },
+            ticks: { 
+              stepSize: 25, 
+              font: { size: 10 }, 
+              callback: (value) => value + '%', 
+              color: textColor 
+            }
           }
         },
-        animation: { duration: 0 }
+        animation: {
+          duration: 1000,
+          easing: 'easeInOutQuart'
+        }
       }
     });
   }
 
-  // Bar Chart
+  // Bar Chart (Horizontal)
   const barCanvas = document.getElementById("barChart");
   if (barCanvas && typeof HABITS !== "undefined" && HABITS.length > 0) {
     const barCtx = barCanvas.getContext("2d");
@@ -471,13 +625,13 @@ document.addEventListener("DOMContentLoaded", () => {
     window.barChart = new Chart(barCtx, {
       type: "bar",
       data: {
-        labels: HABITS.map(h => h.name.length > 12 ? h.name.substring(0, 12) + '...' : h.name),
+        labels: HABITS.map(h => h.name.length > 15 ? h.name.substring(0, 15) + '...' : h.name),
         datasets: [{
-          label: "%",
+          label: "Progress",
           data: habitProgress,
-          backgroundColor: "#0d6efd",
-          borderRadius: 3,
-          barThickness: 15
+          backgroundColor: isDark ? "#6366f1" : "#4f46e5",
+          borderRadius: 4,
+          barThickness: 18
         }]
       },
       options: {
@@ -486,22 +640,50 @@ document.addEventListener("DOMContentLoaded", () => {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: (context) => context.parsed.x + '%' } }
+          tooltip: { 
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 10,
+            callbacks: { 
+              label: (context) => 'Progress: ' + context.parsed.x + '%' 
+            } 
+          }
         },
         scales: {
           x: {
-            min: 0, max: 100,
-            grid: { color: gridColor },
-            ticks: { stepSize: 50, font: { size: 9 }, callback: (value) => value + '%', color: textColor }
+            min: 0, 
+            max: 100,
+            grid: { 
+              color: gridColor,
+              drawBorder: false 
+            },
+            ticks: { 
+              stepSize: 50, 
+              font: { size: 10 }, 
+              callback: (value) => value + '%', 
+              color: textColor 
+            }
           },
           y: {
             grid: { display: false },
-            ticks: { font: { size: 8 }, color: textColor }
+            ticks: { 
+              font: { size: 9 }, 
+              color: textColor 
+            }
           }
         },
-        animation: { duration: 0 }
+        animation: {
+          duration: 1000,
+          easing: 'easeInOutQuart'
+        }
       }
     });
   }
+
+  /* =====================
+     VERIFY INITIAL STATS ON LOAD
+     ===================== */
+  // Log to console for debugging
+  console.log('Today Stats:', initialTodayStats);
+  console.log(`Completed: ${initialTodayStats.completed}/${initialTodayStats.total} (${initialTodayStats.percentage}%)`);
 
 });
